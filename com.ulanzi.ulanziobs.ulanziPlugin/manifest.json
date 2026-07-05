@@ -1,0 +1,137 @@
+{
+  "Author": "Jason Schwefel",
+  "Name": "OBS Control",
+  "Description": "Control OBS Studio from the Ulanzi D200X with live state on the keys (REC / MIC OFF / scene) plus mic gain on an encoder. JS port of the MX OBS plugin.",
+  "Icon": "assets/icons/pluginIcon.png",
+  "Category": "OBS Control",
+  "CategoryIcon": "assets/icons/category.png",
+  "CodePath": "dist/app.js",
+  "Type": "JavaScript",
+  "Inspect": "--inspect=127.0.0.1:9231",
+  "PrivateAPI": true,
+  "UUID": "com.ulanzi.ulanzistudio.ulanziobs",
+  "Actions": [
+    {
+      "Name": "Record",
+      "Icon": "assets/actions/record.svg",
+      "state": 0,
+      "States": [
+        { "Name": "Idle",      "Image": "assets/actions/record.svg" },
+        { "Name": "Recording", "Image": "assets/actions/record.svg" }
+      ],
+      "Tooltip": "Start / stop OBS recording",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.record",
+      "SupportedInMultiActions": false,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Keypad"],
+      "Devices": []
+    },
+    {
+      "Name": "Mute",
+      "Icon": "assets/actions/mic.svg",
+      "PropertyInspectorPath": "property-inspector/mute/inspector.html",
+      "state": 0,
+      "States": [
+        { "Name": "Live",  "Image": "assets/actions/mic.svg" },
+        { "Name": "Muted", "Image": "assets/actions/mic-muted.svg" }
+      ],
+      "Tooltip": "Toggle mute on the mic input",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.mute",
+      "SupportedInMultiActions": false,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Keypad"],
+      "Devices": []
+    },
+    {
+      "Name": "Studio",
+      "Icon": "assets/actions/studio.svg",
+      "state": 0,
+      "States": [
+        { "Name": "Off", "Image": "assets/actions/studio.svg" },
+        { "Name": "On",  "Image": "assets/actions/studio.svg" }
+      ],
+      "Tooltip": "Toggle OBS Studio Mode",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.studio",
+      "SupportedInMultiActions": false,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Keypad"],
+      "Devices": []
+    },
+    {
+      "Name": "Take",
+      "Icon": "assets/actions/transition.svg",
+      "state": 0,
+      "States": [
+        { "Name": "Rest",  "Image": "assets/actions/transition.svg" },
+        { "Name": "Flash", "Image": "assets/actions/transition.svg" }
+      ],
+      "Tooltip": "Transition Preview to Program (green flash on press)",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.take",
+      "SupportedInMultiActions": true,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Keypad"],
+      "Devices": []
+    },
+    {
+      "Name": "BRB",
+      "Icon": "assets/actions/brb.svg",
+      "state": 0,
+      "States": [
+        { "Name": "Idle", "Image": "assets/actions/brb.svg" },
+        { "Name": "OnBrb", "Image": "assets/actions/brb.svg" }
+      ],
+      "Tooltip": "Cut Program to the next Be-Right-Back scene (cycles BRB-prefixed scenes)",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.brb",
+      "SupportedInMultiActions": true,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Keypad"],
+      "Devices": []
+    },
+    {
+      "Name": "Scene",
+      "Icon": "assets/actions/scenes.svg",
+      "PropertyInspectorPath": "property-inspector/scene/inspector.html",
+      "state": 0,
+      "States": [
+        { "Name": "Idle",    "Image": "assets/actions/scenes.svg" },
+        { "Name": "Preview", "Image": "assets/actions/scenes.svg" },
+        { "Name": "Program", "Image": "assets/actions/scenes.svg" }
+      ],
+      "Tooltip": "Switch to a scene (Preview in Studio Mode, else Program)",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.scene",
+      "SupportedInMultiActions": true,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Keypad"],
+      "Devices": []
+    },
+    {
+      "Name": "Mic Gain",
+      "Icon": "assets/actions/mic.svg",
+      "PropertyInspectorPath": "property-inspector/micgain/inspector.html",
+      "state": 0,
+      "States": [
+        { "Name": "Gain", "Image": "assets/actions/mic.svg" }
+      ],
+      "Tooltip": "Rotate to adjust mic gain (dB); press to reset to 0 dB",
+      "UUID": "com.ulanzi.ulanzistudio.ulanziobs.micgain",
+      "SupportedInMultiActions": false,
+      "DisableAutomaticStates": true,
+      "Controllers": ["Encoder"],
+      "Encoder": {
+        "layout": "$UA1"
+      },
+      "Devices": ["D200X"]
+    }
+  ],
+  "OS": [
+    { "Platform": "mac",     "MinimumVersion": "10.11" },
+    { "Platform": "windows", "MinimumVersion": "10" }
+  ],
+  "Software": {
+    "MinVersion": "2.1.4"
+  },
+  "ApplicationsToMonitor": {
+    "mac": ["com.obsproject.obs-studio"],
+    "windows": ["obs32.exe", "obs64.exe"]
+  }
+}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover" />
+  <title>Scene</title>
+  <link rel="stylesheet" href="../../libs/css/uspi.css">
+  <style>
+    .uspi-item-label { width: 112px; }
+  </style>
+</head>
+
+<body>
+  <div class="udpi-wrapper hidden uspi-wrapper">
+    <form id="property-inspector">
+      <div class="uspi-item">
+        <div class="uspi-item-label" data-localize>Scene</div>
+        <!-- Populated live from obs.getAllScenes() (standalone scenes + collapsed "seq:<base>"). -->
+        <select class="uspi-item-value select" id="target" name="target"></select>
+      </div>
+      <div class="uspi-item">
+        <div class="uspi-item-label" data-localize>Idle Color</div>
+        <select class="uspi-item-value select color-selector" id="color" name="color">
+          <option value="" selected data-localize>Default (cyan)</option>
+          <option value="cyan">Cyan</option>
+          <option value="green">Green</option>
+          <option value="red">Red</option>
+          <option value="amber">Amber</option>
+          <option value="slate">Slate</option>
+          <option value="white">White</option>
+        </select>
+      </div>
+      <div class="uspi-item-note" data-localize>
+        In Studio Mode the key sets Preview; otherwise it cuts Program. A "seq:" target
+        cycles the numbered scenes in that group on each press.
+      </div>
+    </form>
+  </div>
+
+  <script src="../../libs/js/constants.js"></script>
+  <script src="../../libs/js/eventEmitter.js"></script>
+  <script src="../../libs/js/timers.js"></script>
+  <script src="../../libs/js/utils.js"></script>
+  <script src="../../libs/js/ulanziApi.js"></script>
+  <script src="./inspector.js"></script>
+</body>
+
+</html>

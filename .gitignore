@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build output
+dist/
+**/dist/
+
+# local OBS config (holds the OBS WebSocket password — never commit)
+config.json
+**/config.json
+
+# macOS
+.DS_Store
+
+# logs / editor
+*.log
+.vscode/
+.idea/

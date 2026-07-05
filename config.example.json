@@ -1,0 +1,16 @@
+{
+  "_comment": "Copy this to ~/.config/ulanzi-obs/config.json and fill in your values. That file is git-ignored (it holds your OBS password). All keys are optional; defaults shown here.",
+  "host": "127.0.0.1",
+  "port": 4455,
+  "password": "your-obs-websocket-password",
+  "micInput": "Scarlett Solo",
+
+  "_brbScene_comment": "A scene-name PREFIX. The BRB key cycles every scene whose name starts with this (e.g. 'BRB 1', 'BRB 2').",
+  "brbScene": "BRB",
+
+  "_sceneColors_comment": "Idle color per scene name OR per sequence base-name. Palette: cyan | green | red | amber | slate | white. Unlisted scenes default to cyan.",
+  "sceneColors": {
+    "D850": "amber",
+    "Brio": "cyan"
+  }
+}
