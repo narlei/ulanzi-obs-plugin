@@ -32,7 +32,8 @@ clickable encoders vs the MX's single roller. Every MX feature maps; Mic Gain ge
 - `$UD` (class `UlanziApi`, from `plugin/actions/ulanzi-api/index.js`): connects to Ulanzi Studio on
   `ws://127.0.0.1:3906` (host passes `argv=[address, port, language]`).
 - **Lifecycle:** `onAdd` (placed → cache a per-`context` instance) · `onSetActive` (page visible) ·
-  `onRun` (**keypad press**, the main trigger) · `onDialRotate` (encoder turn, signed delta) ·
+  `onRun` (**keypad press**, the main trigger) · `onDialRotate` (encoder turn; msg carries `rotateEvent`
+  = `'left'|'right'|'hold-left'|'hold-right'`, a DIRECTION — no numeric magnitude) ·
   `onDialDown`/`onDialUp` (encoder press) · `onClear` (removed; `param` is an **array**, each element
   has its own `.context`) · `onParamFromApp`/`onParamFromPlugin` (settings changed).
 - **Key face setters:** `setStateIcon(ctx,stateIdx,text)` (index into manifest `States[]`),
@@ -40,8 +41,9 @@ clickable encoders vs the MX's single roller. Every MX feature maps; Mic Gain ge
   Use `DisableAutomaticStates:true` on every action (we drive state from OBS, not host auto-toggle).
 - **OBS: zero built-in support.** We ship our own obs-websocket v5 client (`obs-websocket-js`).
 - Property Inspector = per-action HTML pane; pushes settings via `$UD.sendParamFromPlugin`.
-- Node flavor has **no** global-settings API — shared OBS creds come from the config file
-  (`~/.config/ulanzi-obs/config.json`), per-key overrides come from each action's PI.
+- Shared OBS creds come from the config file (`~/.config/ulanzi-obs/config.json`); per-key overrides
+  come from each action's PI. (The Node `$UD` DOES implement `get/setGlobalSettings` — verified in SDK
+  source — but we use the config file so the password lives outside Ulanzi Studio's store.)
 
 ---
 
@@ -111,16 +113,21 @@ UlanziDeck has no dynamic-parameter analog — the user places a key and configu
   A seq key lights if ANY member is Program/Preview.
 
 ### 7. Mic Gain — `plugin/actions/MicGain.js` · **Encoder** · PI: mic input override
-- rotate (`onDialRotate`, signed delta): `next = clamp(current + delta*STEP_DB, -60, 0)`;
-  `obs.setInputVolumeDb(mic, next)` → **`SetInputVolume`** `{inputName, inputVolumeDb}`.
+- rotate: use `onDialRotateLeft`/`onDialRotateRight` (the msg gives DIRECTION only — `rotateEvent`,
+  no numeric delta). Each event steps a fixed amount: `next = clamp(current ± STEP_DB, -60, 0)`
+  (− on left, + on right); `obs.setInputVolumeDb(mic, next)` → **`SetInputVolume`** `{inputName, inputVolumeDb}`.
 - press (`onDialDown`) → `obs.setInputVolumeDb(mic, 0)` (reset to unity).
 - readout `"-6.0 dB"` (one decimal) / `"—"` disconnected / `"…"` unknown — via the encoder `$UA1`
   layout title.
 - prime **`GetInputVolume`** when NaN; live **`InputVolumeChanged`**.
 - **`STEP_DB = 0.04`** — user-tuned to "Perfect" on the MX. **DO NOT change without asking.**
-  ⚠️ The MX roller was smooth-streaming (delta magnitude scaled with speed); the **D200X encoder is
-  detented/clicky**, so the delta granularity WILL differ. Re-tune effective sensitivity on hardware,
-  keeping 0.04 as the documented baseline. This is the single most likely feel-difference from the MX.
+  ⚠️ Feel WILL differ from the MX: the MX roller streamed a signed magnitude (roll faster → bigger
+  jump); the **D200X encoder reports only direction, one `dialrotate` event per detent** (SDK gives no
+  magnitude — verified). So gain moves a FIXED `STEP_DB` per detent, not a speed-scaled amount. 0.04/detent
+  will likely feel too fine (a detent is a bigger physical unit than a roller tick) — re-tune the
+  per-detent step on hardware, keeping 0.04 as the documented starting point. This is the single most
+  likely feel-difference from the MX. **[verify on hardware: does one detent = exactly one event, and
+  is there any count/velocity field beyond `rotateEvent`?]**
 
 ---
 

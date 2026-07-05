@@ -75,7 +75,7 @@ $UD.onRun((jsn) => {
   inst.run?.(jsn);
 });
 
-// --- encoder rotate (Mic Gain): jsn carries a signed rotation delta ---
+// --- encoder rotate (Mic Gain): jsn.rotateEvent is a DIRECTION ('left'/'right'/hold-*), no magnitude ---
 $UD.onDialRotate((jsn) => {
   INSTANCES[jsn.context]?.rotate?.(jsn);
 });

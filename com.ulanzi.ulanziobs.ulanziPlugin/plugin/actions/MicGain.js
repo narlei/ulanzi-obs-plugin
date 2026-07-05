@@ -1,9 +1,12 @@
 // Mic Gain encoder — port of MicGainAdjustment.cs.
 //
-// rotate (onDialRotate, jsn carries a signed delta):
-//   current = obs.getInputVolumeDb(mic); if NaN -> 0
-//   next    = clamp(current + delta * STEP_DB, MIN_DB, MAX_DB)
-//   obs.setInputVolumeDb(mic, next)          -> SetInputVolume { inputName, inputVolumeDb }
+// rotate (onDialRotate): the SDK message gives DIRECTION only —
+//   jsn.rotateEvent = 'left' | 'right' | 'hold-left' | 'hold-right'. There is NO numeric
+//   delta/magnitude (verified in SDK source). So each event steps a FIXED amount:
+//     current = obs.getInputVolumeDb(mic); if NaN -> 0
+//     dir     = (rotateEvent starts 'right') ? +1 : -1
+//     next    = clamp(current + dir * STEP_DB, MIN_DB, MAX_DB)
+//     obs.setInputVolumeDb(mic, next)        -> SetInputVolume { inputName, inputVolumeDb }
 // press (dialDown): obs.setInputVolumeDb(mic, 0)   (reset to unity / 0 dB)
 // readout: "-6.0 dB" (one decimal); "—" disconnected; "…" unknown.
 //          shown via the encoder $UA1 layout title (setStateIcon/text or setFeedback).
@@ -12,9 +15,11 @@
 //        refresh only when getInputVolumeDb is NaN (gated).
 //
 // STEP_DB = 0.04 — user-tuned to "Perfect" on the MX roller. DO NOT change without asking.
-// NOTE: the D200X encoder is a detented clicky knob; the MX roller was smooth-streaming.
-//   The delta granularity WILL differ — re-tune the effective sensitivity on hardware,
-//   but keep 0.04 as the documented baseline (see ../../PORTING.md "encoder tuning").
+// NOTE: feel WILL differ. MX roller streamed a signed magnitude (roll faster -> bigger jump);
+//   the D200X encoder reports only direction, one event per detent. So gain moves a fixed
+//   STEP_DB per detent, not speed-scaled. 0.04/detent will likely be too fine (a detent is a
+//   bigger unit than a roller tick) — re-tune the per-detent step on hardware, keeping 0.04 as
+//   the documented starting point. [verify on hardware: 1 detent == 1 event? any count field?]
 //
 // SCAFFOLD STUB — bodies TODO on hardware. See ../../PORTING.md.
 
@@ -36,8 +41,8 @@ export default class MicGainAction {
   }
 
   rotate(jsn) {
-    // const delta = signed rotation from jsn
-    // clamp(current + delta * STEP_DB, MIN_DB, MAX_DB) -> obs.setInputVolumeDb(mic, next)
+    // const dir = (jsn.rotateEvent || '').startsWith('right') ? 1 : -1;  // direction only
+    // clamp(current + dir * STEP_DB, MIN_DB, MAX_DB) -> obs.setInputVolumeDb(mic, next)
   }
 
   dialDown() {
