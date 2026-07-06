@@ -111,12 +111,16 @@
       "state": 0,
       "States": [
         {
-          "Name": "Idle",
-          "Image": "assets/actions/brb_off.png"
+          "Name": "Inactive",
+          "Image": "assets/actions/brb_inactive.png"
         },
         {
-          "Name": "OnBrb",
-          "Image": "assets/actions/brb_on.png"
+          "Name": "Preview",
+          "Image": "assets/actions/brb_preview.png"
+        },
+        {
+          "Name": "Live",
+          "Image": "assets/actions/brb_live.png"
         }
       ],
       "Tooltip": "Cut Program to the next Be-Right-Back scene (cycles BRB-prefixed scenes)",

@@ -16,8 +16,10 @@
 // Auto-discovery: new "BRB N" scenes join the cycle live (SceneListChanged refresh).
 
 // Manifest State indices (setStateIcon flips these by index; no path resolution).
-const STATE_OFF = 0; // brb_off.png
-const STATE_ON = 1;  // brb_on.png
+// 3-tier like Scene: inactive / preview (yellow) / live (magenta flood).
+const STATE_INACTIVE = 0; // brb_inactive.png
+const STATE_PREVIEW = 1;  // brb_preview.png (whole-key yellow)
+const STATE_LIVE = 2;     // brb_live.png (whole-key magenta)
 
 export default class BrbAction {
   constructor(context, ud, obs, config) {
@@ -73,15 +75,18 @@ export default class BrbAction {
   }
 
   render() {
-    let index = STATE_OFF;
+    // 3-tier, mirroring Scene: a BRB card on Program -> LIVE (magenta flood);
+    // on Preview (queued, not yet taken) -> PREVIEW (yellow); neither -> inactive.
+    // Program wins over Preview when a BRB card is on both.
+    let index = STATE_INACTIVE;
     if (this.obs.isConnected) {
       const scenes = this.obs.getScenesWithPrefix(this._prefix());
-      // Lit when a BRB card is the active scene for this key's route
-      // (Preview when routing to preview, else Program).
-      const active = this._routesToPreview()
-        ? this.obs.currentPreviewScene
-        : this.obs.currentProgramScene;
-      if (active != null && scenes.indexOf(active) >= 0) index = STATE_ON;
+      const onBus = (name) => name != null && scenes.indexOf(name) >= 0;
+      if (onBus(this.obs.currentProgramScene)) {
+        index = STATE_LIVE;
+      } else if (onBus(this.obs.currentPreviewScene)) {
+        index = STATE_PREVIEW;
+      }
     }
     if (index === this._lastFaceIndex) return; // memoize: skip redundant repaints
     this._lastFaceIndex = index;

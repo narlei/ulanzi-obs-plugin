@@ -20,6 +20,7 @@ import BrbAction from './actions/Brb.js';
 import SceneAction from './actions/Scene.js';
 import MicGainAction from './actions/MicGain.js';
 
+
 const PLUGIN_UUID = 'com.ulanzi.ulanzistudio.ulanziobs';
 
 // Map an action UUID (from a placed key/encoder) to its implementation class.

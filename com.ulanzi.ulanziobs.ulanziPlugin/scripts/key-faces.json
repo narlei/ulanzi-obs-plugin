@@ -13,8 +13,9 @@
     { "action": "studio", "out": "studio_off", "glyph": "studio",     "bar": "green", "body": "black", "glyph_color": "green" },
     { "action": "studio", "out": "studio_on",  "glyph": "studio",     "bar": "green", "body": "green", "glyph_color": "ink" },
 
-    { "action": "brb",    "out": "brb_off",    "glyph": "brb",        "bar": "magenta", "body": "black",   "glyph_color": "magenta" },
-    { "action": "brb",    "out": "brb_on",     "glyph": "brb",        "bar": "magenta", "body": "magenta", "glyph_color": "ink" },
+    { "action": "brb",    "out": "brb_inactive", "glyph": "brb",      "bar": "magenta", "body": "black",   "glyph_color": "magenta" },
+    { "action": "brb",    "out": "brb_preview",  "glyph": "brb",      "bar": "yellow",  "body": "yellow",  "glyph_color": "ink" },
+    { "action": "brb",    "out": "brb_live",     "glyph": "brb",      "bar": "magenta", "body": "magenta", "glyph_color": "ink" },
 
     { "action": "micgain","out": "micgain",    "glyph": "mic",        "bar": "red",   "body": "black", "glyph_color": "red" },
 
