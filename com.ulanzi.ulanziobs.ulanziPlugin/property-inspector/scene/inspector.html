@@ -100,22 +100,26 @@
     // Main service relays the live scene list here.
     $UD.onSendToPropertyInspector?.((jsn) => consumeScenes(jsn));
 
-    // Request the current OBS scene list from the main service. The service replies by
-    // relaying getAllScenes() back to the PI (populate handshake).
+    let BRB_PREFIX = 'BRB'; // updated from the plugin's reply; used to filter the DDL.
+
+    // Request the OBS scene list from the main service via sendToPlugin — a
+    // NON-persisting pass-through. NEVER request via sendParamFromPlugin: that
+    // channel persists, and would clobber the saved { scene, target, icon }.
     function requestScenes() {
-      const req = { action: 'getScenes' };
-      // sendToPlugin: pass-through request to the main service (not persisted).
-      $UD.sendToPlugin?.(req);
-      // Belt-and-suspenders: also flag it on the persisted-param channel the plugin already
-      // listens on (onParamFromPlugin), so a service that only wires that path still answers.
-      $UD.sendParamFromPlugin?.(Object.assign({}, ACTION_SETTING, req));
+      $UD.sendToPlugin?.({ action: 'getScenes' });
     }
 
-    // Pull a scene list out of whatever wrapper the host delivered (payload | param | settings).
+    // Pull the scene list (and BRB prefix) out of whatever wrapper the host delivered.
     function consumeScenes(jsn) {
       if (!jsn) return;
       const bag = jsn.payload || jsn.param || jsn.settings || {};
+      if (typeof bag.brbScene === 'string' && bag.brbScene) BRB_PREFIX = bag.brbScene;
       if (Array.isArray(bag.scenes)) populateScenes(bag.scenes);
+    }
+
+    // True if a scene name belongs to the BRB key (starts with the BRB prefix).
+    function isBrbScene(name) {
+      return (name || '').toLowerCase().startsWith(BRB_PREFIX.toLowerCase());
     }
 
     function hydrate(params) {
@@ -135,6 +139,9 @@
         const value = typeof s === 'string' ? s : (s.value != null ? s.value : '');
         const label = typeof s === 'string' ? s : (s.label || s.value || '');
         if (value === '') continue;
+        // BRB scenes belong to the BRB key — keep them out of the Scene DDL,
+        // unless this key is already saved to one (don't silently drop the choice).
+        if (isBrbScene(value) && value !== current) continue;
         const o = document.createElement('option');
         o.value = value;
         o.textContent = label;

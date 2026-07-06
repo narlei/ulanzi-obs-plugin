@@ -26,6 +26,7 @@ export default class BrbAction {
     this.obs = obs;
     this.config = config;
     this.brbScene = null;     // PI override of the prefix; falls back to config.brbScene
+    this.target = null;       // 'preview' | 'output' — from PI; default follows studio mode
     this._lastIndex = -1;     // per-instance resume index (cycle position)
     this._lastFaceIndex = -1; // memoized last painted State index (repaint-storm guard)
     this.render();
@@ -33,6 +34,7 @@ export default class BrbAction {
 
   updateSettings(settings) {
     if (settings && settings.brbScene) this.brbScene = settings.brbScene;
+    if (settings && settings.target !== undefined) this.target = settings.target;
     this.render();
   }
 
@@ -40,29 +42,46 @@ export default class BrbAction {
     return this.brbScene || this.config.brbScene || 'BRB';
   }
 
+  // Route to Preview (queue) rather than Program (cut). Default: follow studio mode.
+  _routesToPreview() {
+    if (this.target === 'preview') return true;
+    if (this.target === 'output') return false;
+    return !!this.obs.studioModeEnabled;
+  }
+
   run() {
     const scenes = this.obs.getScenesWithPrefix(this._prefix());
     const n = scenes.length;
     if (n === 0) return; // no BRB cards -> no-op
 
-    const current = this.obs.currentProgramScene;
-    const curIdx = current != null ? scenes.indexOf(current) : -1;
+    // Advance relative to the mode-appropriate active scene (Preview when routing
+    // to preview, else Program), resuming from our own index otherwise.
+    const active = this._routesToPreview()
+      ? this.obs.currentPreviewScene
+      : this.obs.currentProgramScene;
+    const curIdx = active != null ? scenes.indexOf(active) : -1;
     const baseIdx = curIdx >= 0 ? curIdx : this._lastIndex;
     const nextIdx = (((baseIdx + 1) % n) + n) % n; // resume + wrap
     this._lastIndex = nextIdx;
 
-    this.obs.setProgramScene(scenes[nextIdx]);
+    if (this._routesToPreview()) {
+      this.obs.setPreviewScene(scenes[nextIdx]);
+    } else {
+      this.obs.setProgramScene(scenes[nextIdx]);
+    }
     this.render();
   }
 
   render() {
     let index = STATE_OFF;
     if (this.obs.isConnected) {
-      const current = this.obs.currentProgramScene;
-      if (current != null) {
-        const scenes = this.obs.getScenesWithPrefix(this._prefix());
-        if (scenes.indexOf(current) >= 0) index = STATE_ON;
-      }
+      const scenes = this.obs.getScenesWithPrefix(this._prefix());
+      // Lit when a BRB card is the active scene for this key's route
+      // (Preview when routing to preview, else Program).
+      const active = this._routesToPreview()
+        ? this.obs.currentPreviewScene
+        : this.obs.currentProgramScene;
+      if (active != null && scenes.indexOf(active) >= 0) index = STATE_ON;
     }
     if (index === this._lastFaceIndex) return; // memoize: skip redundant repaints
     this._lastFaceIndex = index;

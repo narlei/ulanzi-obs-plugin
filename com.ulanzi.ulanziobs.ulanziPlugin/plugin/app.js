@@ -102,23 +102,22 @@ $UD.onClear((jsn) => {
 $UD.onParamFromApp((jsn) => applySettings(jsn));
 $UD.onParamFromPlugin((jsn) => applySettings(jsn));
 
-// A Property Inspector can request the live OBS scene list. The Scene PI sends
-// { action: 'getScenes' } (via sendParamFromPlugin); we relay obs.getAllScenes()
-// back to that PI instance so its <select> populates.
-function maybeAnswerSceneRequest(jsn) {
-  const p = jsn && jsn.param;
-  if (!p || p.action !== 'getScenes') return false;
-  const scenes = obs.getAllScenes();
-  // Reply on both channels: the dedicated PI channel and the param echo the PI
-  // also listens on (consumeScenes reads payload | param | settings).
-  $UD.sendToPropertyInspector?.({ scenes }, jsn.context);
-  $UD.sendParamFromPlugin?.({ scenes }, jsn.context);
-  return true;
-}
+// A Property Inspector requests the live OBS scene list via sendToPlugin (a
+// NON-persisting pass-through). We reply via sendToPropertyInspector (also
+// non-persisting). IMPORTANT: never use sendParamFromPlugin for this — that channel
+// PERSISTS whatever it sends as the key's settings, which would clobber the saved
+// { scene, target, icon } and reset the key on every restart.
+$UD.on('sendToPlugin', (jsn) => {
+  const req = (jsn && jsn.payload) || {};
+  if (req.action !== 'getScenes') return;
+  // The dispatcher populates jsn.context before emitting; reply to that PI only.
+  $UD.sendToPropertyInspector?.(
+    { scenes: obs.getAllScenes(), brbScene: config.brbScene },
+    jsn.context
+  );
+});
 
 function applySettings(jsn) {
-  // Intercept a scene-list request before treating it as settings.
-  if (maybeAnswerSceneRequest(jsn)) return;
   const settings = jsn.param || {};
   const inst = INSTANCES[jsn.context];
   if (!inst || JSON.stringify(settings) === '{}') return;

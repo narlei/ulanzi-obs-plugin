@@ -107,6 +107,7 @@
     {
       "Name": "BRB",
       "Icon": "assets/actions/brb.svg",
+      "PropertyInspectorPath": "property-inspector/brb/inspector.html",
       "state": 0,
       "States": [
         {
