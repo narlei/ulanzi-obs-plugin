@@ -20,6 +20,7 @@ import BrbAction from './actions/Brb.js';
 import SceneAction from './actions/Scene.js';
 import MicGainAction from './actions/MicGain.js';
 
+
 const PLUGIN_UUID = 'com.ulanzi.ulanzistudio.ulanziobs';
 
 // Map an action UUID (from a placed key/encoder) to its implementation class.
@@ -101,6 +102,21 @@ $UD.onClear((jsn) => {
 // --- settings changed (host restore or echoed from a Property Inspector) ---
 $UD.onParamFromApp((jsn) => applySettings(jsn));
 $UD.onParamFromPlugin((jsn) => applySettings(jsn));
+
+// A Property Inspector requests the live OBS scene list via sendToPlugin (a
+// NON-persisting pass-through). We reply via sendToPropertyInspector (also
+// non-persisting). IMPORTANT: never use sendParamFromPlugin for this — that channel
+// PERSISTS whatever it sends as the key's settings, which would clobber the saved
+// { scene, target, icon } and reset the key on every restart.
+$UD.on('sendToPlugin', (jsn) => {
+  const req = (jsn && jsn.payload) || {};
+  if (req.action !== 'getScenes') return;
+  // The dispatcher populates jsn.context before emitting; reply to that PI only.
+  $UD.sendToPropertyInspector?.(
+    { scenes: obs.getAllScenes(), brbScene: config.brbScene },
+    jsn.context
+  );
+});
 
 function applySettings(jsn) {
   const settings = jsn.param || {};

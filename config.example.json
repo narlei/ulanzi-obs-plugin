@@ -12,5 +12,11 @@
   "sceneColors": {
     "D850": "amber",
     "Brio": "cyan"
+  },
+
+  "_sceneIcons_comment": "Glyph per scene name OR per sequence base-name, so a camera scene reads as a camera instead of the default monitor. Icon names map to assets/actions/<name>.svg: camera | webcam | monitor | scenes. Unlisted scenes default to 'scenes'.",
+  "sceneIcons": {
+    "D850": "camera",
+    "Brio": "webcam"
   }
 }

@@ -3,9 +3,7 @@
 This plugin controls **OBS Studio** from a **Ulanzi D200X** through **Ulanzi Studio**. It is a
 Node.js UlanziDeck plugin. These steps assume no prior experience with the Ulanzi SDK.
 
-> Status: SCAFFOLD. The plugin loads and the toolchain builds, but the action logic is not yet
-> implemented (waiting on hardware). Steps marked **[verify on arrival]** could not be confirmed
-> without the physical D200X + a Ulanzi Studio install.
+> Status: 1.0.0 — implemented and verified on real D200X hardware.
 
 ## 0. Prerequisites
 
@@ -83,8 +81,7 @@ main service must be started manually and some device features won't render ther
 ## 5. Verify
 
 - Ulanzi Studio shows the **OBS Control** actions; dropping one on a key paints a face.
-- With OBS running + config set, keys reflect live state (REC lights red, Mute shows the slashed mic
-  when muted, Scene keys light green/cyan for Program/Preview).
-- The Mic Gain encoder shows a dB readout and turning it changes the mic level in OBS.
-
-All of §5 is **[verify on arrival]** — the action logic is stubbed until the hardware is in hand.
+- With OBS running + config set, keys reflect live state: Record floods red while recording, Mute
+  shows the slashed mic when muted, Scene keys flood yellow when queued to Preview and their accent
+  color when live on Program, BRB behaves the same in magenta.
+- The Mic Gain encoder trims the mic level in OBS (0.2 dB per detent; press resets to 0 dB).

@@ -15,26 +15,33 @@
 <body>
   <div class="udpi-wrapper hidden uspi-wrapper">
     <form id="property-inspector">
+      <!-- (1) Scene: populated live from the OBS scene list the plugin relays. -->
       <div class="uspi-item">
         <div class="uspi-item-label" data-localize>Scene</div>
-        <!-- Populated live from obs.getAllScenes() (standalone scenes + collapsed "seq:<base>"). -->
-        <select class="uspi-item-value select" id="target" name="target"></select>
+        <select class="uspi-item-value select" id="scene" name="scene"></select>
       </div>
+
+      <!-- (2) Target: Preview vs Program (Output). -->
       <div class="uspi-item">
-        <div class="uspi-item-label" data-localize>Idle Color</div>
-        <select class="uspi-item-value select color-selector" id="color" name="color">
-          <option value="" selected data-localize>Default (cyan)</option>
-          <option value="cyan">Cyan</option>
-          <option value="green">Green</option>
-          <option value="red">Red</option>
-          <option value="amber">Amber</option>
-          <option value="slate">Slate</option>
-          <option value="white">White</option>
+        <div class="uspi-item-label" data-localize>Target</div>
+        <select class="uspi-item-value select" id="target" name="target">
+          <option value="preview" data-localize>Preview</option>
+          <option value="output" data-localize>Output</option>
         </select>
       </div>
-      <div class="uspi-item-note" data-localize>
-        In Studio Mode the key sets Preview; otherwise it cuts Program. A "seq:" target
-        cycles the numbered scenes in that group on each press.
+
+      <!-- (3) Icon: face family (monitor / camera / webcam) — matches scene_<icon>_* PNGs. -->
+      <div class="uspi-item">
+        <div class="uspi-item-label" data-localize>Icon</div>
+        <select class="uspi-item-value select" id="icon" name="icon">
+          <option value="monitor" data-localize>Monitor</option>
+          <option value="camera" data-localize>Camera</option>
+          <option value="webcam" data-localize>Webcam</option>
+        </select>
+      </div>
+
+      <div class="uspi-item-note tip info" data-localize>
+        In Studio Mode Preview sets the next scene; Output cuts Program directly.
       </div>
     </form>
   </div>
@@ -44,7 +51,122 @@
   <script src="../../libs/js/timers.js"></script>
   <script src="../../libs/js/utils.js"></script>
   <script src="../../libs/js/ulanziApi.js"></script>
-  <script src="./inspector.js"></script>
+  <script>
+    // Scene Property Inspector — three controls persisted as { scene, target, icon }.
+    //
+    //   (1) scene  — the OBS scene name, chosen from the LIVE scene list the plugin relays.
+    //   (2) target — 'preview' | 'output'  (Studio-Mode Preview vs. direct Program cut).
+    //   (3) icon   — 'monitor' | 'camera' | 'webcam'  (which scene_<icon>_* face family paints).
+    //
+    // Scene-list handshake (cribbed from the settings roundtrip already wired in this repo):
+    //   - On connect the PI REQUESTS the live list from the main service. The service owns
+    //     it via ObsClient.getAllScenes() (primed by GetSceneList — see plugin/obs/ObsClient.js).
+    //   - The service RELAYS the list back; we populate the <select> from whichever wrapper
+    //     the host delivers it in (sendToPropertyInspector -> payload, or an echoed param).
+    //   - Settings persist back on every change via sendParamFromPlugin -> onParamFromPlugin
+    //     -> app.js applySettings -> SceneAction.updateSettings({ scene, target, icon }).
+    let ACTION_SETTING = {};
+    let form = '';
+    let sceneEl = '';
+
+    $UD.connect();
+
+    $UD.onConnected(() => {
+      form = document.querySelector('#property-inspector');
+      sceneEl = document.querySelector('#scene');
+      document.querySelector('.udpi-wrapper').classList.remove('hidden');
+
+      // Persist { scene, target, icon } to the plugin on any change.
+      form.addEventListener(
+        'input',
+        Utils.debounce(async () => {
+          ACTION_SETTING = Utils.getFormValue(form);
+          $UD.sendParamFromPlugin(ACTION_SETTING);
+        })
+      );
+
+      // Ask the main service for the live scene list (populate handshake).
+      requestScenes();
+    });
+
+    // Host restore / plugin echo of saved settings.
+    $UD.onAdd((jsn) => {
+      if (jsn && jsn.param) hydrate(jsn.param);
+      requestScenes();
+    });
+    $UD.onParamFromApp((jsn) => { if (jsn && jsn.param) hydrate(jsn.param); consumeScenes(jsn); });
+    $UD.onParamFromPlugin((jsn) => { if (jsn && jsn.param) hydrate(jsn.param); consumeScenes(jsn); });
+
+    // Main service relays the live scene list here.
+    $UD.onSendToPropertyInspector?.((jsn) => consumeScenes(jsn));
+
+    let BRB_PREFIX = 'BRB'; // updated from the plugin's reply; used to filter the DDL.
+
+    // Request the OBS scene list from the main service via sendToPlugin — a
+    // NON-persisting pass-through. NEVER request via sendParamFromPlugin: that
+    // channel persists, and would clobber the saved { scene, target, icon }.
+    function requestScenes() {
+      $UD.sendToPlugin?.({ action: 'getScenes' });
+    }
+
+    // Pull the scene list (and BRB prefix) out of whatever wrapper the host delivered.
+    function consumeScenes(jsn) {
+      if (!jsn) return;
+      const bag = jsn.payload || jsn.param || jsn.settings || {};
+      if (typeof bag.brbScene === 'string' && bag.brbScene) BRB_PREFIX = bag.brbScene;
+      if (Array.isArray(bag.scenes)) populateScenes(bag.scenes);
+    }
+
+    // True if a scene name belongs to the BRB key (starts with the BRB prefix).
+    function isBrbScene(name) {
+      return (name || '').toLowerCase().startsWith(BRB_PREFIX.toLowerCase());
+    }
+
+    function hydrate(params) {
+      ACTION_SETTING = params || {};
+      Utils.setFormValue(ACTION_SETTING, form);
+      // Keep the current scene selectable even before the live list arrives.
+      ensureCurrentSceneOption();
+    }
+
+    // Populate the scene <select> from the live list; accepts either bare strings
+    // ["Cam 1", ...] or { value, label } objects (the shape the stub relayed).
+    function populateScenes(scenes) {
+      if (!sceneEl) return;
+      const current = ACTION_SETTING.scene;
+      sceneEl.innerHTML = '';
+      for (const s of scenes) {
+        const value = typeof s === 'string' ? s : (s.value != null ? s.value : '');
+        const label = typeof s === 'string' ? s : (s.label || s.value || '');
+        if (value === '') continue;
+        // BRB scenes belong to the BRB key — keep them out of the Scene DDL,
+        // unless this key is already saved to one (don't silently drop the choice).
+        if (isBrbScene(value) && value !== current) continue;
+        const o = document.createElement('option');
+        o.value = value;
+        o.textContent = label;
+        if (value === current) o.selected = true;
+        sceneEl.appendChild(o);
+      }
+      ensureCurrentSceneOption();
+    }
+
+    // If a saved scene isn't in the live list yet (list not arrived, or scene renamed),
+    // keep it as a selectable option so the PI never silently drops the user's choice.
+    function ensureCurrentSceneOption() {
+      if (!sceneEl) return;
+      const current = ACTION_SETTING.scene;
+      if (!current) return;
+      const exists = Array.from(sceneEl.options).some((o) => o.value === current);
+      if (!exists) {
+        const o = document.createElement('option');
+        o.value = current;
+        o.textContent = current;
+        sceneEl.insertBefore(o, sceneEl.firstChild);
+      }
+      sceneEl.value = current;
+    }
+  </script>
 </body>
 
 </html>

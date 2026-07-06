@@ -4,11 +4,18 @@
 //                                               -> SetStudioModeEnabled { studioModeEnabled }
 // state source: obs.studioModeEnabled           (prime GetStudioModeEnabled,
 //                                                live via StudioModeStateChanged)
-// visuals:      disconnected -> idleGlyph('studio', slate)
-//               enabled      -> activeTile('studio', green)
-//               disabled     -> idleGlyph('studio', green)
+// visuals (pre-baked PNG faces in assets/actions/):
+//   disconnected -> studio_off.png   (idle/off face; never crash when !isConnected)
+//   enabled      -> studio_on.png
+//   disabled     -> studio_off.png
 //
-// SCAFFOLD STUB — bodies TODO on hardware. See ../../PORTING.md.
+// Faces are pre-baked; paint via ud.setStateIcon(ctx, index). No text arg — the user
+// owns the Studio label. The last painted path is memoized per instance so a repaint
+// with an unchanged face is a no-op (prevents the repaint-storm PORTING.md warns about).
+
+// Manifest State indices (setStateIcon flips these by index; no path resolution).
+const STATE_OFF = 0; // studio_off.png
+const STATE_ON = 1;  // studio_on.png
 
 export default class StudioAction {
   constructor(context, ud, obs, config) {
@@ -16,13 +23,20 @@ export default class StudioAction {
     this.ud = ud;
     this.obs = obs;
     this.config = config;
+    this._lastIndex = -1;
+    this.render();
   }
 
   run() {
-    // this.obs.setStudioModeEnabled(!this.obs.studioModeEnabled);
+    this.obs.setStudioModeEnabled(!this.obs.studioModeEnabled);
   }
 
-  render() {}
+  render() {
+    const index = (this.obs.isConnected && this.obs.studioModeEnabled) ? STATE_ON : STATE_OFF;
+    if (index === this._lastIndex) return; // memoize: skip unchanged repaints
+    this._lastIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
+  }
 
   destroy() {}
 }

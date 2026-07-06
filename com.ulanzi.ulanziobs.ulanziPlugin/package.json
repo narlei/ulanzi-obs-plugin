@@ -1,11 +1,12 @@
 {
   "name": "ulanzi-obs",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Control OBS Studio from the Ulanzi D200X (JS port of the MX OBS plugin)",
   "type": "module",
   "scripts": {
     "start": "node plugin/app.js",
-    "build": "webpack --config webpack.config.js"
+    "gen:faces": "node scripts/gen-key-faces.mjs",
+    "build": "npm run gen:faces && webpack --config webpack.config.js"
   },
   "author": "Jason Schwefel",
   "license": "MIT",

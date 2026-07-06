@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover" />
+  <title>BRB</title>
+  <link rel="stylesheet" href="../../libs/css/uspi.css">
+  <style>.uspi-item-label { width: 112px; }</style>
+</head>
+
+<body>
+  <div class="udpi-wrapper hidden uspi-wrapper">
+    <form id="property-inspector">
+      <!-- Target: Preview (queue) vs Output (cut Program directly). -->
+      <div class="uspi-item">
+        <div class="uspi-item-label" data-localize>Target</div>
+        <select class="uspi-item-value select" id="target" name="target">
+          <option value="preview" data-localize>Preview</option>
+          <option value="output" data-localize>Output</option>
+        </select>
+      </div>
+      <div class="uspi-item-note tip info" data-localize>
+        In Studio Mode Preview queues the next BRB card; Output cuts Program directly.
+      </div>
+    </form>
+  </div>
+
+  <script src="../../libs/js/constants.js"></script>
+  <script src="../../libs/js/eventEmitter.js"></script>
+  <script src="../../libs/js/timers.js"></script>
+  <script src="../../libs/js/utils.js"></script>
+  <script src="../../libs/js/ulanziApi.js"></script>
+  <script>
+    // BRB Property Inspector — persists { target } like the Scene PI.
+    let ACTION_SETTING = {};
+    let form = '';
+
+    $UD.connect();
+
+    $UD.onConnected(() => {
+      form = document.querySelector('#property-inspector');
+      document.querySelector('.udpi-wrapper').classList.remove('hidden');
+      form.addEventListener('input', Utils.debounce(async () => {
+        ACTION_SETTING = Utils.getFormValue(form);
+        $UD.sendParamFromPlugin(ACTION_SETTING);
+      }));
+    });
+
+    $UD.onAdd((jsn) => { if (jsn && jsn.param) hydrate(jsn.param); });
+    $UD.onParamFromApp((jsn) => { if (jsn && jsn.param) hydrate(jsn.param); });
+    $UD.onParamFromPlugin((jsn) => { if (jsn && jsn.param) hydrate(jsn.param); });
+
+    function hydrate(params) {
+      ACTION_SETTING = params || {};
+      Utils.setFormValue(ACTION_SETTING, form);
+    }
+  </script>
+</body>
+</html>

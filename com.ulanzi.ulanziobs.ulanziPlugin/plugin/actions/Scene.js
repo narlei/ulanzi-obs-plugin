@@ -3,36 +3,26 @@
 // PUBLISHING MODEL NOTE (the one real divergence from MX):
 //   MX added N dynamic parameters to ONE command (the user saw N scene keys auto-generated).
 //   UlanziDeck has no dynamic-parameter analog — an action is placed per key by the user.
-//   PORT DECISION (finalize at code-time, see ../../PORTING.md "Scene publishing"):
-//     Option A (default): ONE placeable "Scene" action; each placed key is configured via
-//       its Property Inspector (target = a scene name OR a "seq:<base>" sequence, + color).
-//       The PI dropdown is populated from obs.getAllScenes() (live).
-//     Option B: a small generator that emits one profile per discovered scene.
-//   This stub carries the per-key target in settings.target (Option A).
+//   PORT DECISION: Option A — ONE placeable "Scene" action; each placed key is configured via
+//   its Property Inspector: settings.scene = a scene name OR "seq:<base>" sequence,
+//   settings.target = 'preview'|'output' (default follows studio mode),
+//   settings.icon = 'monitor'|'camera'|'webcam' (default 'monitor').
 //
-// sequence collapse (for the PI dropdown + seq targets):
-//   SEQ_RE = /^(?<base>.+?)\s+(?<num>\d+)$/   — "Cam 1","Cam 2" -> base "Cam"
-//   a base needs >= 2 members to be a sequence; else it's a standalone scene.
-//   exclude scenes startsWith config.brbScene (owned by the BRB key).
-//
-// press (run), target resolves to a concrete scene:
-//   standalone -> the scene name
-//   seq:<base> -> advance+wrap over members relative to the mode-appropriate active
-//                 scene (Preview in Studio Mode else Program); per-base resume index.
-//   then MODE-AWARE cut:
-//     obs.studioModeEnabled ? obs.setPreviewScene(target) : obs.setProgramScene(target)
-//       -> SetCurrentPreviewScene / SetCurrentProgramScene
-// visuals:
-//   idle color   = colorByName(settings.color || sceneColors[name], cyan)
-//   is Program   -> activeTile('scenes', green)
-//   is Preview   -> activeTile('scenes', cyan)
-//   else         -> idleGlyph('scenes', idleColor)
-//   (a seq key lights if ANY member is Program/Preview)
-//
-// SCAFFOLD STUB — bodies TODO on hardware. See ../../PORTING.md.
+// RENDER MODEL: faces are PRE-BAKED PNGs at /assets/actions/scene_<family>_<state>.png
+//   family = settings.icon || 'monitor'   (monitor|camera|webcam)
+//   state  = 'live' (this key's scene is current PROGRAM)
+//          | 'preview' (this key's scene is current PREVIEW)
+//          | 'inactive' (neither, also the disconnected / no-target face)
+//   A seq key lights if ANY member matches. Painted via setStateIcon (State index); last index memoized
+//   per context so an unchanged repaint is skipped (prevents the MX repaint-storm).
 
 export const SEQ_RE = /^(?<base>.+?)\s+(?<num>\d+)$/;
 export const SEQ_PREFIX = 'seq:';
+
+const VALID_ICONS = new Set(['monitor', 'camera', 'webcam']);
+
+// Manifest State index base per icon family (see manifest Scene States[] order).
+const FAMILY_BASE = { monitor: 0, camera: 3, webcam: 6 };
 
 export default class SceneAction {
   constructor(context, ud, obs, config) {
@@ -40,21 +30,118 @@ export default class SceneAction {
     this.ud = ud;
     this.obs = obs;
     this.config = config;
-    this.target = null;   // scene name or "seq:<base>", from PI settings
-    this.color = null;    // palette name override from PI
+    this.scene = null;    // scene name or "seq:<base>", from PI settings
+    this.target = null;   // 'preview' | 'output' — override for the mode-aware cut
+    this.icon = null;     // family override from PI (monitor|camera|webcam)
     this._seqIndex = -1;  // per-key resume index for sequence targets
+    this._lastIndex = -1; // memoized last painted State index (skip identical repaints)
+    this.render();
   }
 
   updateSettings(settings) {
-    if (settings.target) this.target = settings.target;
-    if (settings.color) this.color = settings.color;
+    if (settings.scene !== undefined) this.scene = settings.scene;
+    if (settings.target !== undefined) this.target = settings.target;
+    if (settings.icon !== undefined) this.icon = settings.icon;
+    this.render();
   }
+
+  // --- helpers ---
+
+  _family() {
+    return VALID_ICONS.has(this.icon) ? this.icon : 'monitor';
+  }
+
+  // Members of a sequence base, in OBS UI order, matching "<base> <num>".
+  _seqMembers(base) {
+    const b = (base || '').toLowerCase();
+    return this.obs.getAllScenes().filter((name) => {
+      const m = SEQ_RE.exec(name);
+      return m && m.groups.base.toLowerCase() === b;
+    });
+  }
+
+  // The scene(s) this key represents: a single-element list for a standalone scene,
+  // or all members for a "seq:<base>" target.
+  _memberScenes() {
+    const target = this.scene;
+    if (!target) return [];
+    if (target.startsWith(SEQ_PREFIX)) {
+      return this._seqMembers(target.slice(SEQ_PREFIX.length));
+    }
+    return [target];
+  }
+
+  // Whether this key routes to Preview (Studio Mode) rather than Program (output).
+  _routesToPreview() {
+    if (this.target === 'preview') return true;
+    if (this.target === 'output') return false;
+    // default: follow studio mode
+    return !!this.obs.studioModeEnabled;
+  }
+
+  // Resolve the concrete scene to cut to on press.
+  _resolveScene() {
+    const target = this.scene;
+    if (!target) return null;
+
+    if (!target.startsWith(SEQ_PREFIX)) return target; // standalone
+
+    const members = this._seqMembers(target.slice(SEQ_PREFIX.length));
+    if (members.length === 0) return null;
+
+    // Advance relative to the mode-appropriate active scene, resuming per-key otherwise.
+    const active = this._routesToPreview()
+      ? this.obs.currentPreviewScene
+      : this.obs.currentProgramScene;
+    const activeIdx = members.indexOf(active);
+    const baseIdx = activeIdx >= 0 ? activeIdx : this._seqIndex;
+    const n = members.length;
+    const nextIdx = (((baseIdx + 1) % n) + n) % n; // resume + wrap
+    this._seqIndex = nextIdx;
+    return members[nextIdx];
+  }
+
+  // --- events ---
 
   run() {
-    // resolve target (seq advance if needed) then mode-aware cut
+    if (!this.obs.isConnected) return;
+    const scene = this._resolveScene();
+    if (!scene) return;
+    if (this._routesToPreview()) {
+      this.obs.setPreviewScene(scene);
+    } else {
+      this.obs.setProgramScene(scene);
+    }
   }
 
-  render() {}
+  render() {
+    // Paint via setStateIcon(index) — the proven mechanism (flips a manifest State
+    // by index; no path resolution). Manifest Scene States are ordered:
+    //   monitor {inactive,preview,live} = 0,1,2  | camera = 3,4,5 | webcam = 6,7,8
+    // so index = familyBase + stateOffset.
+    const family = this._family();
+    let stateOffset = 0; // inactive
+
+    if (this.obs.isConnected) {
+      const members = this._memberScenes();
+      if (members.length) {
+        const program = this.obs.currentProgramScene;
+        const preview = this.obs.currentPreviewScene;
+        if (members.some((s) => s === program)) {
+          stateOffset = 2;       // live — PROGRAM wins over PREVIEW when both match
+        } else if (members.some((s) => s === preview)) {
+          stateOffset = 1;       // preview
+        }
+      }
+    }
+    // disconnected -> stateOffset 0 (the inactive face); never crashes.
+
+    const familyBase = FAMILY_BASE[family] ?? 0;
+    const index = familyBase + stateOffset;
+    if (index === this._lastIndex) return; // memoized: skip identical repaint
+    this._lastIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
+  }
 
   destroy() {}
 }
