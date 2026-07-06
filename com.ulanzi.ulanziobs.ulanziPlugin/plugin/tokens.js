@@ -20,15 +20,16 @@ export const TOKENS = {
   // accent / function colors (C)
   red:       '#E5484D', // Record, Mute
   green:     '#35C66B', // Take, Studio (and generic "on-air")
-  amber:     '#E0902F', // BRB, Scene(webcam)
+  amber:     '#E0902F', // Scene(webcam)
   blue:      '#3A9BD4', // Scene(monitor)
   purple:    '#8B5CF6', // Scene(camera)
-  darkgreen: '#1B7A3D', // Scene LIVE body only
+  magenta:   '#C558A8', // BRB (clean, slightly desaturated)
+  yellow:    '#D6C24E', // Scene PREVIEW whole-key flood (slightly desaturated, non-eye-burning)
 
   // neutrals
   black:     '#0E1114', // idle/off body (mockup dark)
-  ink:       '#0E1114', // dark glyph on a flooded C body
-  white:     '#FFFFFF', // glyph on the dark-green LIVE body
+  ink:       '#0E1114', // dark glyph on a flooded (C or yellow) body
+  white:     '#FFFFFF', // (retained; no longer used by Scene faces)
 };
 
 // geometry (px on a 196 canvas)

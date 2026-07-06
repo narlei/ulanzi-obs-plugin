@@ -200,9 +200,7 @@
       "Encoder": {
         "layout": "$UA1"
       },
-      "Devices": [
-        "D200X"
-      ]
+      "Devices": []
     }
   ],
   "OS": [
