@@ -1,31 +1,36 @@
 // Mic Gain encoder — port of MicGainAdjustment.cs.
 //
+// RENDER MODEL: faces are PRE-BAKED PNGs. This encoder has a SINGLE face
+// (assets/actions/micgain.png). Paint it via ud.setPathIcon(ctx, path) — the
+// path is plugin-root-relative with a leading slash. No text arg: the user owns
+// the Studio title/label (dB readout is not baked into the key here). The last
+// painted path is memoized per instance so repeated stateChanged events don't
+// re-emit an identical setPathIcon (guards against the repaint-storm the
+// ObsClient change-gates warn about).
+//
 // rotate (onDialRotate): the SDK message gives DIRECTION only —
-//   jsn.rotateEvent = 'left' | 'right' | 'hold-left' | 'hold-right'. There is NO numeric
-//   delta/magnitude (verified in SDK source). So each event steps a FIXED amount:
+//   jsn.rotateEvent = 'left' | 'right' | 'hold-left' | 'hold-right'. There is NO
+//   numeric delta/magnitude, so each event steps a FIXED amount:
 //     current = obs.getInputVolumeDb(mic); if NaN -> 0
-//     dir     = (rotateEvent starts 'right') ? +1 : -1
+//     dir     = rotateEvent starts 'right' ? +1 : -1
 //     next    = clamp(current + dir * STEP_DB, MIN_DB, MAX_DB)
 //     obs.setInputVolumeDb(mic, next)        -> SetInputVolume { inputName, inputVolumeDb }
+//   (hold-left/hold-right start 'left'/'right' so .startsWith picks up both.)
 // press (dialDown): obs.setInputVolumeDb(mic, 0)   (reset to unity / 0 dB)
-// readout: "-6.0 dB" (one decimal); "—" disconnected; "…" unknown.
-//          shown via the encoder $UA1 layout title (setStateIcon/text or setFeedback).
 // mic input: settings.micInput || config.micInput.
-// PRIME: on load if connected -> obs.refreshInputVolumeAsync(mic);
-//        refresh only when getInputVolumeDb is NaN (gated).
-//
-// STEP_DB = 0.04 — user-tuned to "Perfect" on the MX roller. DO NOT change without asking.
-// NOTE: feel WILL differ. MX roller streamed a signed magnitude (roll faster -> bigger jump);
-//   the D200X encoder reports only direction, one event per detent. So gain moves a fixed
-//   STEP_DB per detent, not speed-scaled. 0.04/detent will likely be too fine (a detent is a
-//   bigger unit than a roller tick) — re-tune the per-detent step on hardware, keeping 0.04 as
-//   the documented starting point. [verify on hardware: 1 detent == 1 event? any count field?]
-//
-// SCAFFOLD STUB — bodies TODO on hardware. See ../../PORTING.md.
+// PRIME-ONCE: on render, if connected and getInputVolumeDb is NaN ->
+//   obs.refreshInputVolumeAsync(mic). Gated on NaN so it isn't re-polled every
+//   stateChanged (that was the CPU feedback loop).
 
-const STEP_DB = 0.04;
+const STEP_DB = 1.0;
 const MIN_DB = -60.0;
 const MAX_DB = 0.0;
+
+const FACE = '/assets/actions/micgain.png';
+
+function clamp(v, lo, hi) {
+  return Math.min(hi, Math.max(lo, v));
+}
 
 export default class MicGainAction {
   constructor(context, ud, obs, config) {
@@ -34,23 +39,43 @@ export default class MicGainAction {
     this.obs = obs;
     this.config = config;
     this.micInput = config.micInput;
+    this._lastPath = null; // memoized last painted face path
+    this.render();
   }
 
   updateSettings(settings) {
     if (settings.micInput) this.micInput = settings.micInput;
+    this.render();
   }
 
   rotate(jsn) {
-    // const dir = (jsn.rotateEvent || '').startsWith('right') ? 1 : -1;  // direction only
-    // clamp(current + dir * STEP_DB, MIN_DB, MAX_DB) -> obs.setInputVolumeDb(mic, next)
+    if (!this.obs.isConnected || !this.micInput) return;
+    const dir = (jsn?.rotateEvent || '').startsWith('right') ? 1 : -1;
+    const current = this.obs.getInputVolumeDb(this.micInput);
+    const base = Number.isNaN(current) ? 0 : current;
+    const next = clamp(base + dir * STEP_DB, MIN_DB, MAX_DB);
+    this.obs.setInputVolumeDb(this.micInput, next);
   }
 
   dialDown() {
-    // this.obs.setInputVolumeDb(this.micInput, 0.0);  // reset to unity
+    if (!this.obs.isConnected || !this.micInput) return;
+    this.obs.setInputVolumeDb(this.micInput, 0.0); // reset to unity / 0 dB
   }
 
   render() {
-    // update encoder readout: `${db.toFixed(1)} dB` / "—" / "…"
+    // prime volume once when unknown so the first rotate reads a real value.
+    if (this.obs.isConnected && this.micInput &&
+        Number.isNaN(this.obs.getInputVolumeDb(this.micInput))) {
+      this.obs.refreshInputVolumeAsync(this.micInput);
+    }
+    // single pre-baked face; paint only when it changes (memoized).
+    this._paint(FACE);
+  }
+
+  _paint(path) {
+    if (path === this._lastPath) return;
+    this._lastPath = path;
+    this.ud.setPathIcon(this.ctx, path);
   }
 
   destroy() {}

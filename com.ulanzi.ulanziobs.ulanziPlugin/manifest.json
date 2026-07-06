@@ -16,8 +16,8 @@
       "Icon": "assets/actions/record.svg",
       "state": 0,
       "States": [
-        { "Name": "Idle",      "Image": "assets/actions/record.svg" },
-        { "Name": "Recording", "Image": "assets/actions/record.svg" }
+        { "Name": "Idle",      "Image": "assets/actions/record_off.png" },
+        { "Name": "Recording", "Image": "assets/actions/record_on.png" }
       ],
       "Tooltip": "Start / stop OBS recording",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.record",
@@ -32,8 +32,8 @@
       "PropertyInspectorPath": "property-inspector/mute/inspector.html",
       "state": 0,
       "States": [
-        { "Name": "Live",  "Image": "assets/actions/mic.svg" },
-        { "Name": "Muted", "Image": "assets/actions/mic-muted.svg" }
+        { "Name": "Live",  "Image": "assets/actions/mute_off.png" },
+        { "Name": "Muted", "Image": "assets/actions/mute_on.png" }
       ],
       "Tooltip": "Toggle mute on the mic input",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.mute",
@@ -47,8 +47,8 @@
       "Icon": "assets/actions/studio.svg",
       "state": 0,
       "States": [
-        { "Name": "Off", "Image": "assets/actions/studio.svg" },
-        { "Name": "On",  "Image": "assets/actions/studio.svg" }
+        { "Name": "Off", "Image": "assets/actions/studio_off.png" },
+        { "Name": "On",  "Image": "assets/actions/studio_on.png" }
       ],
       "Tooltip": "Toggle OBS Studio Mode",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.studio",
@@ -62,8 +62,8 @@
       "Icon": "assets/actions/transition.svg",
       "state": 0,
       "States": [
-        { "Name": "Rest",  "Image": "assets/actions/transition.svg" },
-        { "Name": "Flash", "Image": "assets/actions/transition.svg" }
+        { "Name": "Rest",  "Image": "assets/actions/take_off.png" },
+        { "Name": "Flash", "Image": "assets/actions/take_on.png" }
       ],
       "Tooltip": "Transition Preview to Program (green flash on press)",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.take",
@@ -77,8 +77,8 @@
       "Icon": "assets/actions/brb.svg",
       "state": 0,
       "States": [
-        { "Name": "Idle", "Image": "assets/actions/brb.svg" },
-        { "Name": "OnBrb", "Image": "assets/actions/brb.svg" }
+        { "Name": "Idle", "Image": "assets/actions/brb_off.png" },
+        { "Name": "OnBrb", "Image": "assets/actions/brb_on.png" }
       ],
       "Tooltip": "Cut Program to the next Be-Right-Back scene (cycles BRB-prefixed scenes)",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.brb",
@@ -93,9 +93,9 @@
       "PropertyInspectorPath": "property-inspector/scene/inspector.html",
       "state": 0,
       "States": [
-        { "Name": "Idle",    "Image": "assets/actions/scenes.svg" },
-        { "Name": "Preview", "Image": "assets/actions/scenes.svg" },
-        { "Name": "Program", "Image": "assets/actions/scenes.svg" }
+        { "Name": "Idle",    "Image": "assets/actions/scene_monitor_inactive.png" },
+        { "Name": "Preview", "Image": "assets/actions/scene_monitor_preview.png" },
+        { "Name": "Program", "Image": "assets/actions/scene_monitor_live.png" }
       ],
       "Tooltip": "Switch to a scene (Preview in Studio Mode, else Program)",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.scene",
@@ -110,7 +110,7 @@
       "PropertyInspectorPath": "property-inspector/micgain/inspector.html",
       "state": 0,
       "States": [
-        { "Name": "Gain", "Image": "assets/actions/mic.svg" }
+        { "Name": "Gain", "Image": "assets/actions/micgain.png" }
       ],
       "Tooltip": "Rotate to adjust mic gain (dB); press to reset to 0 dB",
       "UUID": "com.ulanzi.ulanzistudio.ulanziobs.micgain",

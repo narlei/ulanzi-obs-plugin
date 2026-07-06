@@ -1,0 +1,33 @@
+{
+  "_comment": "SOT for gen-key-faces.mjs. THE PANEL grammar: each face = 196x196 rounded key with a COLORED TOP ACCENT BAR (token 'bar'), a BODY fill (token 'body'), and a centered line glyph (SVG basename in assets/actions/, recolored to token 'glyph_color'). Tokens resolve via plugin/tokens.js TOKENS. Label = Studio text overlay (NOT baked). No caption. Output -> assets/actions/<out>.png, referenced by manifest States[].Image. Regenerate: npm run gen:faces",
+  "faces": [
+    { "action": "record", "out": "record_off", "glyph": "record",     "bar": "red",   "body": "black", "glyph_color": "red" },
+    { "action": "record", "out": "record_on",  "glyph": "record",     "bar": "red",   "body": "red",   "glyph_color": "ink" },
+
+    { "action": "mute",   "out": "mute_off",   "glyph": "mic",        "bar": "red",   "body": "black", "glyph_color": "red" },
+    { "action": "mute",   "out": "mute_on",    "glyph": "mic-muted",  "bar": "red",   "body": "red",   "glyph_color": "ink" },
+
+    { "action": "take",   "out": "take_off",   "glyph": "transition", "bar": "green", "body": "black", "glyph_color": "green" },
+    { "action": "take",   "out": "take_on",    "glyph": "transition", "bar": "green", "body": "green", "glyph_color": "ink" },
+
+    { "action": "studio", "out": "studio_off", "glyph": "studio",     "bar": "green", "body": "black", "glyph_color": "green" },
+    { "action": "studio", "out": "studio_on",  "glyph": "studio",     "bar": "green", "body": "green", "glyph_color": "ink" },
+
+    { "action": "brb",    "out": "brb_off",    "glyph": "brb",        "bar": "amber", "body": "black", "glyph_color": "amber" },
+    { "action": "brb",    "out": "brb_on",     "glyph": "brb",        "bar": "amber", "body": "amber", "glyph_color": "ink" },
+
+    { "action": "micgain","out": "micgain",    "glyph": "mic",        "bar": "red",   "body": "black", "glyph_color": "red" },
+
+    { "action": "scene", "out": "scene_monitor_inactive", "glyph": "monitor", "bar": "blue",   "body": "black",     "glyph_color": "blue" },
+    { "action": "scene", "out": "scene_monitor_preview",  "glyph": "monitor", "bar": "blue",   "body": "blue",      "glyph_color": "ink" },
+    { "action": "scene", "out": "scene_monitor_live",     "glyph": "monitor", "bar": "blue",   "body": "darkgreen", "glyph_color": "white" },
+
+    { "action": "scene", "out": "scene_camera_inactive",  "glyph": "camera",  "bar": "purple", "body": "black",     "glyph_color": "purple" },
+    { "action": "scene", "out": "scene_camera_preview",   "glyph": "camera",  "bar": "purple", "body": "purple",    "glyph_color": "ink" },
+    { "action": "scene", "out": "scene_camera_live",      "glyph": "camera",  "bar": "purple", "body": "darkgreen", "glyph_color": "white" },
+
+    { "action": "scene", "out": "scene_webcam_inactive",  "glyph": "webcam",  "bar": "amber",  "body": "black",     "glyph_color": "amber" },
+    { "action": "scene", "out": "scene_webcam_preview",   "glyph": "webcam",  "bar": "amber",  "body": "amber",     "glyph_color": "ink" },
+    { "action": "scene", "out": "scene_webcam_live",      "glyph": "webcam",  "bar": "amber",  "body": "darkgreen", "glyph_color": "white" }
+  ]
+}

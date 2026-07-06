@@ -4,7 +4,8 @@
 // WebSocket password). Every key is optional; missing file -> defaults.
 //
 // Schema (see ../../config.example.json):
-//   { host, port, password, micInput, brbScene, sceneColors: { "<name|base>": "<palette>" } }
+//   { host, port, password, micInput, brbScene,
+//     sceneColors: { "<name|base>": "<palette>" }, sceneIcons: { "<name|base>": "<icon>" } }
 
 import { readFileSync } from 'fs';
 import { homedir } from 'os';
@@ -17,6 +18,7 @@ const DEFAULTS = {
   micInput: 'Scarlett Solo',
   brbScene: 'BRB', // a PREFIX, not an exact scene name
   sceneColors: {}, // scene/base name -> palette name (cyan|green|red|amber|slate|white)
+  sceneIcons: {},  // scene/base name -> icon name (camera|webcam|monitor|scenes); default 'scenes'
 };
 
 export function configPath() {
@@ -31,7 +33,8 @@ export function loadConfig() {
     // Missing/unreadable/invalid -> defaults apply.
   }
   const cfg = { ...DEFAULTS, ...pickKnown(fileCfg) };
-  cfg.sceneColors = normalizeSceneColors(fileCfg.sceneColors);
+  cfg.sceneColors = normalizeStringMap(fileCfg.sceneColors);
+  cfg.sceneIcons = normalizeStringMap(fileCfg.sceneIcons);
   return cfg;
 }
 
@@ -48,11 +51,12 @@ function pickKnown(o) {
   return out;
 }
 
-// sceneColors: keep only string values (palette names), case-insensitive lookups handled by consumers.
-function normalizeSceneColors(sc) {
+// sceneColors / sceneIcons: keep only string values (palette or icon names).
+// Case-insensitive lookups are handled by consumers.
+function normalizeStringMap(m) {
   const out = {};
-  if (sc && typeof sc === 'object') {
-    for (const [k, v] of Object.entries(sc)) {
+  if (m && typeof m === 'object') {
+    for (const [k, v] of Object.entries(m)) {
       if (typeof v === 'string') out[k] = v;
     }
   }

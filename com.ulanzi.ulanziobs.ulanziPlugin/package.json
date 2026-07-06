@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node plugin/app.js",
-    "build": "webpack --config webpack.config.js"
+    "gen:faces": "node scripts/gen-key-faces.mjs",
+    "build": "npm run gen:faces && webpack --config webpack.config.js"
   },
   "author": "Jason Schwefel",
   "license": "MIT",

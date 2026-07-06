@@ -53,8 +53,25 @@ Rendering model (port of `Icons.cs`) — **black-idle / color-active**: idle = b
 function color; active = color floods the key + icon in dark ink. Palette (exact hex): cyan `#3A9BD4`
 (scenes), green `#35C66B` (take/live/on), red `#E5484D` (mute/rec), amber `#E0902F` (BRB), slate
 `#5A626E` (offline). SVGs use `currentColor`; recolor = string-replace → `#RRGGBB` → rasterize.
-**Memoize composed tiles** (name|bg|iconColor) — uncached rebuilds pegged the MX host at ~375% CPU.
-Deliver via `setBaseDataIcon` (lets us recolor live). Files: `plugin/render.js`, `assets/actions/*.svg`.
+**Memoize composed tiles** (name|bg|iconColor|w) — uncached rebuilds pegged the MX host at ~375% CPU.
+Deliver via `setBaseDataIcon` (lets us recolor live). Files: `plugin/render.js`, `assets/actions/*`.
+
+**ICON SYSTEM (verified against Ulanzi's own shipping plugins + `device_type_source.json`).** Two
+distinct tiers — do NOT conflate them:
+- **`Icon` (action-level)** = the picker/sidebar thumbnail in Studio. SVG (or small PNG). Never on the
+  deck. We keep the small `assets/actions/*.svg` here.
+- **`States[].Image`** = the actual **physical LCD key face**, and the platform standard is **196×196
+  PNG** (Ulanzi's OBS plugin: 44 faces at 196×196; lightmaster: 14/14 at 196×196). A bare/upscaled
+  24×24 glyph looks tiny+blurry on the key — the faces must be authored/composed at 196.
+- **Double-wide key** = D200X position `3_2` is a `LargeItem`+`FixedItem` (from `device_type_source.json`:
+  D200X Layout = 5 cols × 3 rows, `LargeItem: 3_2`). Its face is **392×196** (two tiles). `render.js`
+  exports `KEY_PX=196`, `WIDE_PX=392`, `GLYPH_PX=120`, `KEY_RADIUS_PX=27`.
+- **Static faces are generated, not hand-drawn:** `npm run gen:faces` (`scripts/gen-key-faces.mjs`,
+  data in `scripts/key-faces.json`) composes each `States[].Image` PNG (dark/colour rounded key +
+  centered recoloured glyph) from the SVG sources + the `render.js` PALETTE, so static + live faces
+  match. `npm run build` runs it first. Committed to the repo (a sideload can't run a generator).
+- **Live render** uses the SAME palette + geometry at 196 (`idleGlyph`/`activeTile(name, colorHex,
+  widthPx)`), delivered via `setBaseDataIcon` so scenes/state recolor without shipping every variant.
 
 ### 1. Record — `plugin/actions/Record.js` · Keypad
 - press → `obs.toggleRecord()` → **`ToggleRecord`**.
@@ -108,9 +125,13 @@ UlanziDeck has no dynamic-parameter analog — the user places a key and configu
     (Preview in Studio Mode else Program); per-base resume index.
   - then **mode-aware cut:** `obs.studioModeEnabled ? obs.setPreviewScene(t) : obs.setProgramScene(t)`
     → **`SetCurrentPreviewScene`** / **`SetCurrentProgramScene`**.
-- idle color = `colorByName(settings.color || config.sceneColors[name], cyan)`; is-Program →
-  active('scenes', green); is-Preview → active('scenes', cyan); else idle('scenes', idleColor).
-  A seq key lights if ANY member is Program/Preview.
+- idle color = `colorByName(settings.color || config.sceneColors[name], cyan)`.
+- **glyph** = `settings.icon || config.sceneIcons[name] || 'scenes'` — per-scene icon override so a
+  camera scene reads as a camera, not the default monitor. Icon names map to `assets/actions/<name>.svg`
+  (`camera`, `webcam`, `monitor`, default `scenes`). is-Program → active(icon, green); is-Preview →
+  active(icon, cyan); else idle(icon, idleColor). A seq key lights if ANY member is Program/Preview.
+  (Ported from the MX fix: `SceneCommand` hardcoded `"scenes"` for every scene; now data-driven off
+  `sceneIcons`, e.g. `{"D850":"camera","Brio":"webcam"}`.)
 
 ### 7. Mic Gain — `plugin/actions/MicGain.js` · **Encoder** · PI: mic input override
 - rotate: use `onDialRotateLeft`/`onDialRotateRight` (the msg gives DIRECTION only — `rotateEvent`,
@@ -162,10 +183,12 @@ and caches you recreate the GC-thrash storm.
 ---
 
 ## Config — `~/.config/ulanzi-obs/config.json` (mirrors MX)
-`{ host, port, password, micInput, brbScene, sceneColors: { "<name|base>": "<palette>" } }`.
+`{ host, port, password, micInput, brbScene, sceneColors: { "<name|base>": "<palette>" },
+sceneIcons: { "<name|base>": "<icon>" } }`.
 All optional; missing file → defaults (127.0.0.1:4455, mic "Scarlett Solo", brb prefix "BRB").
 Real `config.json` is git-ignored (holds the OBS password). See `config.example.json`. `brbScene` is a
-PREFIX; `sceneColors` values are palette names (cyan|green|red|amber|slate|white). Loader: `plugin/config.js`.
+PREFIX; `sceneColors` values are palette names (cyan|green|red|amber|slate|white); `sceneIcons` values are
+icon names (`camera`|`webcam`|`monitor`|`scenes`), unlisted scenes default to `scenes`. Loader: `plugin/config.js`.
 
 ---
 
