@@ -22,7 +22,7 @@
 //   obs.refreshInputVolumeAsync(mic). Gated on NaN so it isn't re-polled every
 //   stateChanged (that was the CPU feedback loop).
 
-const STEP_DB = 1.0;
+const STEP_DB = 0.2;
 const MIN_DB = -60.0;
 const MAX_DB = 0.0;
 
