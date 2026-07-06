@@ -9,12 +9,13 @@
 //   enabled      -> studio_on.png
 //   disabled     -> studio_off.png
 //
-// Faces are pre-baked; paint via ud.setPathIcon(ctx, path). No text arg — the user
+// Faces are pre-baked; paint via ud.setStateIcon(ctx, index). No text arg — the user
 // owns the Studio label. The last painted path is memoized per instance so a repaint
 // with an unchanged face is a no-op (prevents the repaint-storm PORTING.md warns about).
 
-const FACE_ON = '/assets/actions/studio_on.png';
-const FACE_OFF = '/assets/actions/studio_off.png';
+// Manifest State indices (setStateIcon flips these by index; no path resolution).
+const STATE_OFF = 0; // studio_off.png
+const STATE_ON = 1;  // studio_on.png
 
 export default class StudioAction {
   constructor(context, ud, obs, config) {
@@ -22,7 +23,7 @@ export default class StudioAction {
     this.ud = ud;
     this.obs = obs;
     this.config = config;
-    this._lastPath = null;
+    this._lastIndex = -1;
     this.render();
   }
 
@@ -31,10 +32,10 @@ export default class StudioAction {
   }
 
   render() {
-    const path = (this.obs.isConnected && this.obs.studioModeEnabled) ? FACE_ON : FACE_OFF;
-    if (path === this._lastPath) return; // memoize: skip unchanged repaints
-    this._lastPath = path;
-    this.ud.setPathIcon(this.ctx, path);
+    const index = (this.obs.isConnected && this.obs.studioModeEnabled) ? STATE_ON : STATE_OFF;
+    if (index === this._lastIndex) return; // memoize: skip unchanged repaints
+    this._lastIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
   }
 
   destroy() {}

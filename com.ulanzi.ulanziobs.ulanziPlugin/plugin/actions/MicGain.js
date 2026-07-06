@@ -1,11 +1,11 @@
 // Mic Gain encoder — port of MicGainAdjustment.cs.
 //
 // RENDER MODEL: faces are PRE-BAKED PNGs. This encoder has a SINGLE face
-// (assets/actions/micgain.png). Paint it via ud.setPathIcon(ctx, path) — the
+// (assets/actions/micgain.png). Paint it via ud.setStateIcon(ctx, index) — the
 // path is plugin-root-relative with a leading slash. No text arg: the user owns
 // the Studio title/label (dB readout is not baked into the key here). The last
 // painted path is memoized per instance so repeated stateChanged events don't
-// re-emit an identical setPathIcon (guards against the repaint-storm the
+// re-emit an identical setStateIcon (guards against the repaint-storm the
 // ObsClient change-gates warn about).
 //
 // rotate (onDialRotate): the SDK message gives DIRECTION only —
@@ -26,7 +26,7 @@ const STEP_DB = 1.0;
 const MIN_DB = -60.0;
 const MAX_DB = 0.0;
 
-const FACE = '/assets/actions/micgain.png';
+const STATE_GAIN = 0; // micgain.png (single manifest State)
 
 function clamp(v, lo, hi) {
   return Math.min(hi, Math.max(lo, v));
@@ -39,7 +39,7 @@ export default class MicGainAction {
     this.obs = obs;
     this.config = config;
     this.micInput = config.micInput;
-    this._lastPath = null; // memoized last painted face path
+    this._lastIndex = -1; // memoized last painted State index
     this.render();
   }
 
@@ -69,13 +69,13 @@ export default class MicGainAction {
       this.obs.refreshInputVolumeAsync(this.micInput);
     }
     // single pre-baked face; paint only when it changes (memoized).
-    this._paint(FACE);
+    this._paint(STATE_GAIN);
   }
 
-  _paint(path) {
-    if (path === this._lastPath) return;
-    this._lastPath = path;
-    this.ud.setPathIcon(this.ctx, path);
+  _paint(index) {
+    if (index === this._lastIndex) return;
+    this._lastIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
   }
 
   destroy() {}

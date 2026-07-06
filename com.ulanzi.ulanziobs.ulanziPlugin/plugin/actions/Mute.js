@@ -7,7 +7,7 @@
 //               obs.refreshInputMuteAsync(mic). That refresh raises 'stateChanged',
 //               which re-runs render() with the primed value. Do NOT re-poll every
 //               stateChanged (that was the CPU feedback loop).
-// visuals (PRE-BAKED faces, painted via setPathIcon; user owns the Studio label):
+// visuals (PRE-BAKED faces, painted via setStateIcon (State index); user owns the Studio label):
 //               muted         -> '/assets/actions/mute_on.png'
 //               live / offline-> '/assets/actions/mute_off.png'
 //   (disconnected shows the OFF face — obs.getInputMuted returns false when state
@@ -15,11 +15,12 @@
 //
 // PI (property-inspector/mute): lets the user override the mic input name per key.
 //
-// Repaint gate: memoize the last path pushed for this context and skip setPathIcon
+// Repaint gate: memoize the last State index pushed and skip setStateIcon
 // when it is unchanged (app.js repaints every live key on each 'stateChanged').
 
-const FACE_MUTED = '/assets/actions/mute_on.png';
-const FACE_OFF = '/assets/actions/mute_off.png';
+// Manifest State indices (setStateIcon flips these by index; no path resolution).
+const STATE_OFF = 0;   // mute_off.png (live)
+const STATE_MUTED = 1; // mute_on.png
 
 export default class MuteAction {
   constructor(context, ud, obs, config) {
@@ -28,7 +29,7 @@ export default class MuteAction {
     this.obs = obs;
     this.config = config;
     this.micInput = config.micInput;
-    this._lastPath = null; // last face pushed for this key (repaint gate)
+    this._lastIndex = -1; // last State index pushed for this key (repaint gate)
     this.render();
   }
 
@@ -50,14 +51,14 @@ export default class MuteAction {
 
     // Disconnected -> OFF face (state is wiped on disconnect, so getInputMuted
     // is false and this yields mute_off; no crash).
-    const path = this.obs.getInputMuted(this.micInput) ? FACE_MUTED : FACE_OFF;
-    this._paint(path);
+    const index = this.obs.getInputMuted(this.micInput) ? STATE_MUTED : STATE_OFF;
+    this._paint(index);
   }
 
-  _paint(path) {
-    if (path === this._lastPath) return; // no change -> skip (prevents repaint storm)
-    this._lastPath = path;
-    this.ud.setPathIcon(this.ctx, path);
+  _paint(index) {
+    if (index === this._lastIndex) return; // no change -> skip (prevents repaint storm)
+    this._lastIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
   }
 
   destroy() {}

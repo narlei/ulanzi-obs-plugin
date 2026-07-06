@@ -9,14 +9,15 @@
 //   this._lastIndex = nextIdx
 //   obs.setProgramScene(scenes[nextIdx])         -> SetCurrentProgramScene (always a hard cut,
 //                                                   NOT mode-aware, even in Studio Mode)
-// visuals (PRE-BAKED faces, painted via ud.setPathIcon; path memoized per context):
+// visuals (PRE-BAKED faces, painted via ud.setStateIcon (State index); memoized per context):
 //   disconnected            -> '/assets/actions/brb_off.png'  (OFF/idle face)
 //   on a BRB card (Program scene is one of the cards) -> '/assets/actions/brb_on.png'
 //   idle                    -> '/assets/actions/brb_off.png'
 // Auto-discovery: new "BRB N" scenes join the cycle live (SceneListChanged refresh).
 
-const FACE_ON = '/assets/actions/brb_on.png';
-const FACE_OFF = '/assets/actions/brb_off.png';
+// Manifest State indices (setStateIcon flips these by index; no path resolution).
+const STATE_OFF = 0; // brb_off.png
+const STATE_ON = 1;  // brb_on.png
 
 export default class BrbAction {
   constructor(context, ud, obs, config) {
@@ -26,7 +27,7 @@ export default class BrbAction {
     this.config = config;
     this.brbScene = null;     // PI override of the prefix; falls back to config.brbScene
     this._lastIndex = -1;     // per-instance resume index (cycle position)
-    this._lastPath = null;    // memoized last painted face path (repaint-storm guard)
+    this._lastFaceIndex = -1; // memoized last painted State index (repaint-storm guard)
     this.render();
   }
 
@@ -55,17 +56,17 @@ export default class BrbAction {
   }
 
   render() {
-    let path = FACE_OFF;
+    let index = STATE_OFF;
     if (this.obs.isConnected) {
       const current = this.obs.currentProgramScene;
       if (current != null) {
         const scenes = this.obs.getScenesWithPrefix(this._prefix());
-        if (scenes.indexOf(current) >= 0) path = FACE_ON;
+        if (scenes.indexOf(current) >= 0) index = STATE_ON;
       }
     }
-    if (path === this._lastPath) return; // memoize: skip redundant repaints
-    this._lastPath = path;
-    this.ud.setPathIcon(this.ctx, path);
+    if (index === this._lastFaceIndex) return; // memoize: skip redundant repaints
+    this._lastFaceIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
   }
 
   destroy() {}

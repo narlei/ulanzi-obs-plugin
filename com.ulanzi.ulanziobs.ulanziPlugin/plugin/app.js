@@ -102,7 +102,23 @@ $UD.onClear((jsn) => {
 $UD.onParamFromApp((jsn) => applySettings(jsn));
 $UD.onParamFromPlugin((jsn) => applySettings(jsn));
 
+// A Property Inspector can request the live OBS scene list. The Scene PI sends
+// { action: 'getScenes' } (via sendParamFromPlugin); we relay obs.getAllScenes()
+// back to that PI instance so its <select> populates.
+function maybeAnswerSceneRequest(jsn) {
+  const p = jsn && jsn.param;
+  if (!p || p.action !== 'getScenes') return false;
+  const scenes = obs.getAllScenes();
+  // Reply on both channels: the dedicated PI channel and the param echo the PI
+  // also listens on (consumeScenes reads payload | param | settings).
+  $UD.sendToPropertyInspector?.({ scenes }, jsn.context);
+  $UD.sendParamFromPlugin?.({ scenes }, jsn.context);
+  return true;
+}
+
 function applySettings(jsn) {
+  // Intercept a scene-list request before treating it as settings.
+  if (maybeAnswerSceneRequest(jsn)) return;
   const settings = jsn.param || {};
   const inst = INSTANCES[jsn.context];
   if (!inst || JSON.stringify(settings) === '{}') return;

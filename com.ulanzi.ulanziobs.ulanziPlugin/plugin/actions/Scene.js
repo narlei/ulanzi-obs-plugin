@@ -13,13 +13,16 @@
 //   state  = 'live' (this key's scene is current PROGRAM)
 //          | 'preview' (this key's scene is current PREVIEW)
 //          | 'inactive' (neither, also the disconnected / no-target face)
-//   A seq key lights if ANY member matches. Painted via setPathIcon; last path memoized
+//   A seq key lights if ANY member matches. Painted via setStateIcon (State index); last index memoized
 //   per context so an unchanged repaint is skipped (prevents the MX repaint-storm).
 
 export const SEQ_RE = /^(?<base>.+?)\s+(?<num>\d+)$/;
 export const SEQ_PREFIX = 'seq:';
 
 const VALID_ICONS = new Set(['monitor', 'camera', 'webcam']);
+
+// Manifest State index base per icon family (see manifest Scene States[] order).
+const FAMILY_BASE = { monitor: 0, camera: 3, webcam: 6 };
 
 export default class SceneAction {
   constructor(context, ud, obs, config) {
@@ -31,7 +34,7 @@ export default class SceneAction {
     this.target = null;   // 'preview' | 'output' — override for the mode-aware cut
     this.icon = null;     // family override from PI (monitor|camera|webcam)
     this._seqIndex = -1;  // per-key resume index for sequence targets
-    this._lastPath = null; // memoized last painted path (skip identical repaints)
+    this._lastIndex = -1; // memoized last painted State index (skip identical repaints)
     this.render();
   }
 
@@ -112,8 +115,12 @@ export default class SceneAction {
   }
 
   render() {
+    // Paint via setStateIcon(index) — the proven mechanism (flips a manifest State
+    // by index; no path resolution). Manifest Scene States are ordered:
+    //   monitor {inactive,preview,live} = 0,1,2  | camera = 3,4,5 | webcam = 6,7,8
+    // so index = familyBase + stateOffset.
     const family = this._family();
-    let state = 'inactive';
+    let stateOffset = 0; // inactive
 
     if (this.obs.isConnected) {
       const members = this._memberScenes();
@@ -121,18 +128,19 @@ export default class SceneAction {
         const program = this.obs.currentProgramScene;
         const preview = this.obs.currentPreviewScene;
         if (members.some((s) => s === program)) {
-          state = 'live';        // PROGRAM wins over PREVIEW when both match
+          stateOffset = 2;       // live — PROGRAM wins over PREVIEW when both match
         } else if (members.some((s) => s === preview)) {
-          state = 'preview';
+          stateOffset = 1;       // preview
         }
       }
     }
-    // disconnected -> 'inactive' (the OFF/idle face); never crashes.
+    // disconnected -> stateOffset 0 (the inactive face); never crashes.
 
-    const path = `/assets/actions/scene_${family}_${state}.png`;
-    if (path === this._lastPath) return; // memoized: skip identical repaint
-    this._lastPath = path;
-    this.ud.setPathIcon(this.ctx, path);
+    const familyBase = FAMILY_BASE[family] ?? 0;
+    const index = familyBase + stateOffset;
+    if (index === this._lastIndex) return; // memoized: skip identical repaint
+    this._lastIndex = index;
+    this.ud.setStateIcon(this.ctx, index);
   }
 
   destroy() {}
