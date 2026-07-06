@@ -2,6 +2,7 @@
   "Author": "Jason Schwefel",
   "Name": "OBS Control",
   "Description": "Control OBS Studio from the Ulanzi D200X with live state on the keys (REC / MIC OFF / scene) plus mic gain on an encoder. JS port of the MX OBS plugin.",
+  "Version": "1.0.0",
   "Icon": "assets/icons/pluginIcon.png",
   "Category": "OBS Control",
   "CategoryIcon": "assets/icons/category.png",
