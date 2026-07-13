@@ -1,5 +1,7 @@
 # ulanzi — OBS Control for the Ulanzi D200X
 
+[![Available on Ulanzi Community Store](https://raw.githubusercontent.com/narlei/ulanzicommunitystore/main/docs/badges/ulanzi-community-store.svg)](https://ulanzicommunitystore.narlei.com)
+
 A [UlanziDeck](https://github.com/UlanziTechnology/UlanziDeckPlugin-SDK) plugin (JavaScript / Node.js)
 that controls **OBS Studio** from a **Ulanzi Stream Controller D200X**, with live state painted on the
 keys and a rotary knob for mic gain. It began as a port of `mx-obs-plugin` (the same functionality
